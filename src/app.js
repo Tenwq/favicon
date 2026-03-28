@@ -1,0 +1,373 @@
+const OUTPUT_SIZES = [16, 32, 48, 64, 128];
+
+const elements = {
+  dropzone: document.getElementById("dropzone"),
+  fileInput: document.getElementById("fileInput"),
+  downloadButton: document.getElementById("downloadButton"),
+  roundedToggle: document.getElementById("roundedToggle"),
+  statusText: document.getElementById("statusText"),
+  previewImage: document.getElementById("previewImage"),
+  previewPlaceholder: document.getElementById("previewPlaceholder"),
+  fileName: document.getElementById("fileName"),
+  fileSize: document.getElementById("fileSize"),
+  cornerMode: document.getElementById("cornerMode")
+};
+
+let currentFile = null;
+let currentDownloadUrl = "";
+let currentPreviewUrl = "";
+let currentImageMeta = null;
+
+elements.dropzone.addEventListener("click", () => elements.fileInput.click());
+elements.dropzone.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    elements.fileInput.click();
+  }
+});
+
+elements.fileInput.addEventListener("change", async (event) => {
+  const [file] = event.target.files;
+  if (file) {
+    await handleFile(file);
+  }
+});
+
+elements.roundedToggle.addEventListener("change", async () => {
+  updateCornerMode();
+
+  if (currentFile) {
+    await updatePreview(currentFile);
+  }
+});
+
+["dragenter", "dragover"].forEach((eventName) => {
+  elements.dropzone.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    elements.dropzone.classList.add("is-dragover");
+  });
+});
+
+["dragleave", "drop"].forEach((eventName) => {
+  elements.dropzone.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    elements.dropzone.classList.remove("is-dragover");
+  });
+});
+
+elements.dropzone.addEventListener("drop", async (event) => {
+  const [file] = event.dataTransfer.files;
+  if (file) {
+    await handleFile(file);
+  }
+});
+
+elements.downloadButton.addEventListener("click", async () => {
+  if (!currentFile || !currentImageMeta) {
+    return;
+  }
+
+  try {
+    setStatus("正在生成 ZIP，请稍候...");
+    elements.downloadButton.disabled = true;
+
+    const blob = await createZipBlob(currentFile, currentImageMeta);
+    releaseDownloadUrl();
+    currentDownloadUrl = URL.createObjectURL(blob);
+
+    const anchor = document.createElement("a");
+    anchor.href = currentDownloadUrl;
+    anchor.download = "favicon-icons.zip";
+    anchor.click();
+
+    setStatus("ZIP 生成完成，已开始下载");
+  } catch (error) {
+    console.error(error);
+    setStatus("生成失败，请确认图片为有效 PNG");
+  } finally {
+    elements.downloadButton.disabled = false;
+  }
+});
+
+async function handleFile(file) {
+  if (!isPngFile(file)) {
+    resetState();
+    setStatus("仅支持 PNG 文件");
+    return;
+  }
+
+  try {
+    const image = await loadImage(file);
+    const meta = {
+      width: image.naturalWidth,
+      height: image.naturalHeight
+    };
+
+    if (!isLargeEnough(meta)) {
+      resetState();
+      setStatus("图片宽高必须都大于 256 像素");
+      return;
+    }
+
+    currentFile = file;
+    currentImageMeta = meta;
+    releaseDownloadUrl();
+    updateFileInfo(file, meta);
+    await updatePreview(file);
+    elements.downloadButton.disabled = false;
+    setStatus("PNG 已就绪，可以下载 ZIP 压缩包");
+  } catch (error) {
+    console.error(error);
+    resetState();
+    setStatus("图片读取失败，请更换文件后重试");
+  }
+}
+
+function resetState() {
+  currentFile = null;
+  currentImageMeta = null;
+  releaseDownloadUrl();
+  releasePreviewUrl();
+  elements.downloadButton.disabled = true;
+  elements.previewImage.hidden = true;
+  elements.previewImage.removeAttribute("src");
+  elements.previewPlaceholder.hidden = false;
+  elements.fileName.textContent = "-";
+  elements.fileSize.textContent = "-";
+  updateCornerMode();
+}
+
+function updateFileInfo(file, meta) {
+  elements.fileName.textContent = file.name;
+  elements.fileSize.textContent = `${meta.width} x ${meta.height}`;
+  updateCornerMode();
+}
+
+async function updatePreview(file) {
+  const image = await loadImage(file);
+  const previewBlob = await renderPngBlob(image, 256, isRoundedEnabled());
+
+  releasePreviewUrl();
+  currentPreviewUrl = URL.createObjectURL(previewBlob);
+  elements.previewImage.src = currentPreviewUrl;
+  elements.previewImage.hidden = false;
+  elements.previewPlaceholder.hidden = true;
+}
+
+async function createZipBlob(file) {
+  const image = await loadImage(file);
+  const rounded = isRoundedEnabled();
+  const entries = await Promise.all(
+    OUTPUT_SIZES.map(async (size) => {
+      const pngBlob = await renderPngBlob(image, size, rounded);
+      return {
+        name: getOutputFileName(size),
+        data: new Uint8Array(await pngBlob.arrayBuffer())
+      };
+    })
+  );
+
+  return createZipArchive(entries);
+}
+
+async function renderPngBlob(image, size, rounded) {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+
+  const context = canvas.getContext("2d");
+  context.clearRect(0, 0, size, size);
+  drawImageContain(context, image, size, rounded);
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((pngBlob) => {
+      if (pngBlob) {
+        resolve(pngBlob);
+      } else {
+        reject(new Error("无法生成 PNG 图片"));
+      }
+    }, "image/png");
+  });
+}
+
+function drawImageContain(context, image, size, rounded) {
+  const scale = Math.min(size / image.naturalWidth, size / image.naturalHeight);
+  const drawWidth = Math.round(image.naturalWidth * scale);
+  const drawHeight = Math.round(image.naturalHeight * scale);
+  const offsetX = Math.floor((size - drawWidth) / 2);
+  const offsetY = Math.floor((size - drawHeight) / 2);
+
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+
+  if (rounded) {
+    const radius = Math.max(2, Math.round(size * 0.22));
+    context.save();
+    createRoundedRectPath(context, offsetX, offsetY, drawWidth, drawHeight, radius);
+    context.clip();
+    context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+    context.restore();
+    return;
+  }
+
+  context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+}
+
+function createRoundedRectPath(context, x, y, width, height, radius) {
+  const safeRadius = Math.min(radius, width / 2, height / 2);
+
+  context.beginPath();
+  context.moveTo(x + safeRadius, y);
+  context.arcTo(x + width, y, x + width, y + height, safeRadius);
+  context.arcTo(x + width, y + height, x, y + height, safeRadius);
+  context.arcTo(x, y + height, x, y, safeRadius);
+  context.arcTo(x, y, x + width, y, safeRadius);
+  context.closePath();
+}
+
+function createZipArchive(entries) {
+  const encoder = new TextEncoder();
+  const localParts = [];
+  const centralParts = [];
+  let localOffset = 0;
+  let centralDirectorySize = 0;
+
+  entries.forEach((entry) => {
+    const nameBytes = encoder.encode(entry.name);
+    const crc32 = computeCrc32(entry.data);
+    const localHeader = new Uint8Array(30 + nameBytes.length);
+    const localView = new DataView(localHeader.buffer);
+
+    localView.setUint32(0, 0x04034b50, true);
+    localView.setUint16(4, 20, true);
+    localView.setUint16(6, 0, true);
+    localView.setUint16(8, 0, true);
+    localView.setUint16(10, 0, true);
+    localView.setUint16(12, 0, true);
+    localView.setUint32(14, crc32, true);
+    localView.setUint32(18, entry.data.length, true);
+    localView.setUint32(22, entry.data.length, true);
+    localView.setUint16(26, nameBytes.length, true);
+    localView.setUint16(28, 0, true);
+    localHeader.set(nameBytes, 30);
+
+    const centralHeader = new Uint8Array(46 + nameBytes.length);
+    const centralView = new DataView(centralHeader.buffer);
+
+    centralView.setUint32(0, 0x02014b50, true);
+    centralView.setUint16(4, 20, true);
+    centralView.setUint16(6, 20, true);
+    centralView.setUint16(8, 0, true);
+    centralView.setUint16(10, 0, true);
+    centralView.setUint16(12, 0, true);
+    centralView.setUint16(14, 0, true);
+    centralView.setUint32(16, crc32, true);
+    centralView.setUint32(20, entry.data.length, true);
+    centralView.setUint32(24, entry.data.length, true);
+    centralView.setUint16(28, nameBytes.length, true);
+    centralView.setUint16(30, 0, true);
+    centralView.setUint16(32, 0, true);
+    centralView.setUint16(34, 0, true);
+    centralView.setUint16(36, 0, true);
+    centralView.setUint32(38, 0, true);
+    centralView.setUint32(42, localOffset, true);
+    centralHeader.set(nameBytes, 46);
+
+    localParts.push(localHeader, entry.data);
+    centralParts.push(centralHeader);
+
+    localOffset += localHeader.length + entry.data.length;
+    centralDirectorySize += centralHeader.length;
+  });
+
+  const endRecord = new Uint8Array(22);
+  const endView = new DataView(endRecord.buffer);
+
+  endView.setUint32(0, 0x06054b50, true);
+  endView.setUint16(4, 0, true);
+  endView.setUint16(6, 0, true);
+  endView.setUint16(8, entries.length, true);
+  endView.setUint16(10, entries.length, true);
+  endView.setUint32(12, centralDirectorySize, true);
+  endView.setUint32(16, localOffset, true);
+  endView.setUint16(20, 0, true);
+
+  return new Blob([...localParts, ...centralParts, endRecord], {
+    type: "application/zip"
+  });
+}
+
+function computeCrc32(bytes) {
+  let crc = 0xffffffff;
+
+  for (let index = 0; index < bytes.length; index += 1) {
+    crc ^= bytes[index];
+    for (let bit = 0; bit < 8; bit += 1) {
+      const mask = -(crc & 1);
+      crc = (crc >>> 1) ^ (0xedb88320 & mask);
+    }
+  }
+
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const imageUrl = URL.createObjectURL(file);
+
+    image.onload = () => {
+      URL.revokeObjectURL(imageUrl);
+      resolve(image);
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(imageUrl);
+      reject(new Error("图片加载失败"));
+    };
+
+    image.src = imageUrl;
+  });
+}
+
+function setStatus(message) {
+  elements.statusText.textContent = message;
+}
+
+function isPngFile(file) {
+  return file.type === "image/png" || /\.png$/i.test(file.name);
+}
+
+function isLargeEnough(meta) {
+  return meta.width > 256 && meta.height > 256;
+}
+
+function getOutputFileName(size) {
+  if (size === 48) {
+    return "favicon.png";
+  }
+
+  return `favicon-${size}x${size}.png`;
+}
+
+function isRoundedEnabled() {
+  return elements.roundedToggle.checked;
+}
+
+function updateCornerMode() {
+  elements.cornerMode.textContent = isRoundedEnabled() ? "开启" : "关闭";
+}
+
+function releaseDownloadUrl() {
+  if (currentDownloadUrl) {
+    URL.revokeObjectURL(currentDownloadUrl);
+    currentDownloadUrl = "";
+  }
+}
+
+function releasePreviewUrl() {
+  if (currentPreviewUrl) {
+    URL.revokeObjectURL(currentPreviewUrl);
+    currentPreviewUrl = "";
+  }
+}
