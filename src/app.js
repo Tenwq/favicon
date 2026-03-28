@@ -31,8 +31,8 @@ const THEME_STORAGE_KEY = "theme-preference";
 const THEME_COLOR_META = document.querySelector('meta[name="theme-color"]');
 const systemThemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
 const shareConfig = {
-  title: "Favicon Generator | 在线 PNG 图标包生成工具",
-  text: "上传 PNG，快速生成多尺寸 favicon PNG 图标包，支持圆角开关，纯浏览器本地处理。"
+  title: "Favicon Generator | 在线 ICO 图标生成工具",
+  text: "上传 PNG，快速生成多尺寸 favicon.ico，支持圆角开关，纯浏览器本地处理。"
 };
 
 initializeTheme();
@@ -119,7 +119,7 @@ elements.downloadButton.addEventListener("click", async () => {
     setStatus("正在生成 ZIP，请稍候...");
     elements.downloadButton.disabled = true;
 
-    const blob = await createZipBlob(currentFile, currentImageMeta);
+    const blob = await createZipBlob(currentFile);
     releaseDownloadUrl();
     currentDownloadUrl = URL.createObjectURL(blob);
 
@@ -207,15 +207,37 @@ async function createZipBlob(file) {
   const rounded = isRoundedEnabled();
   const entries = await Promise.all(
     OUTPUT_SIZES.map(async (size) => {
-      const pngBlob = await renderPngBlob(image, size, rounded);
+      const iconImages = await createIconImages(image, [size], rounded);
+      const icoBlob = createIcoFile(iconImages);
+
       return {
         name: getOutputFileName(size),
-        data: new Uint8Array(await pngBlob.arrayBuffer())
+        data: new Uint8Array(await icoBlob.arrayBuffer())
       };
     })
   );
 
   return createZipArchive(entries);
+}
+
+async function createIcoBlob(file) {
+  const image = await loadImage(file);
+  const rounded = isRoundedEnabled();
+  const iconImages = await createIconImages(image, OUTPUT_SIZES, rounded);
+
+  return createIcoFile(iconImages);
+}
+
+async function createIconImages(image, sizes, rounded) {
+  return Promise.all(
+    sizes.map(async (size) => {
+      const pngBlob = await renderPngBlob(image, size, rounded);
+      return {
+        size,
+        data: new Uint8Array(await pngBlob.arrayBuffer())
+      };
+    })
+  );
 }
 
 async function renderPngBlob(image, size, rounded) {
@@ -271,6 +293,39 @@ function createRoundedRectPath(context, x, y, width, height, radius) {
   context.arcTo(x, y + height, x, y, safeRadius);
   context.arcTo(x, y, x + width, y, safeRadius);
   context.closePath();
+}
+
+function createIcoFile(images) {
+  const headerSize = 6;
+  const directoryEntrySize = 16;
+  const directorySize = images.length * directoryEntrySize;
+  const header = new Uint8Array(headerSize + directorySize);
+  const view = new DataView(header.buffer);
+  let dataOffset = header.byteLength;
+
+  view.setUint16(0, 0, true);
+  view.setUint16(2, 1, true);
+  view.setUint16(4, images.length, true);
+
+  images.forEach((image, index) => {
+    const entryOffset = headerSize + index * directoryEntrySize;
+    const dimensionByte = image.size >= 256 ? 0 : image.size;
+
+    view.setUint8(entryOffset, dimensionByte);
+    view.setUint8(entryOffset + 1, dimensionByte);
+    view.setUint8(entryOffset + 2, 0);
+    view.setUint8(entryOffset + 3, 0);
+    view.setUint16(entryOffset + 4, 1, true);
+    view.setUint16(entryOffset + 6, 32, true);
+    view.setUint32(entryOffset + 8, image.data.length, true);
+    view.setUint32(entryOffset + 12, dataOffset, true);
+
+    dataOffset += image.data.length;
+  });
+
+  return new Blob([header, ...images.map((image) => image.data)], {
+    type: "image/x-icon"
+  });
 }
 
 function createZipArchive(entries) {
@@ -359,6 +414,14 @@ function computeCrc32(bytes) {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
+function getOutputFileName(size) {
+  if (size === 48) {
+    return "favicon.ico";
+  }
+
+  return `favicon-${size}x${size}.ico`;
+}
+
 function loadImage(file) {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -388,14 +451,6 @@ function isPngFile(file) {
 
 function isLargeEnough(meta) {
   return meta.width > 256 && meta.height > 256;
-}
-
-function getOutputFileName(size) {
-  if (size === 48) {
-    return "favicon.png";
-  }
-
-  return `favicon-${size}x${size}.png`;
 }
 
 function isRoundedEnabled() {
