@@ -3,17 +3,40 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PNG 转 ZIP 图标包工具</title>
+    <meta
+      name="description"
+      content="免费在线 favicon 生成工具。上传大于 256x256 的 PNG 图片，快速导出 16、32、48、64、128 多尺寸 PNG 图标包，支持圆角开关，纯浏览器本地处理。"
+    />
+    <meta name="theme-color" content="#3977ff" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:site_name" content="Favicon Generator" />
+    <meta property="og:title" content="Favicon Generator | 在线 PNG 图标包生成工具" />
+    <meta
+      property="og:description"
+      content="上传 PNG，快速生成 16、32、48、64、128 多尺寸 favicon PNG 图标包，支持圆角开关，纯浏览器本地处理。"
+    />
+    <meta property="og:url" content="https://tenwq.github.io/favicon/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Favicon Generator | 在线 PNG 图标包生成工具" />
+    <meta
+      name="twitter:description"
+      content="上传 PNG，快速导出多尺寸 favicon PNG 图标包，支持圆角开关，无需上传服务器。"
+    />
+    <title>Favicon Generator | 在线 PNG 图标包生成工具</title>
   </head>
   <body>
     <main class="page">
       <section class="hero">
-        <p class="eyebrow">PNG TO ZIP</p>
-        <h1>将 PNG 图片导出为多尺寸 ZIP 图标包</h1>
+        <p class="eyebrow">FAVICON GENERATOR</p>
+        <h1>在线生成多尺寸 favicon PNG 图标包</h1>
+        <p class="hero-lead">适合站点 favicon、浏览器标签图标和常用 Web 图标资源导出。</p>
         <p class="subtitle">
-          纯前端本地处理，无需上传到服务器。上传大于 256x256 的 PNG 后，可一键下载
-          16、32、48、64、128 五种尺寸的 PNG 压缩包。
+          上传一张大于 256x256 的 PNG 图片，即可快速导出适用于网站图标的
+          16、32、48、64、128 多尺寸 PNG 压缩包。所有处理都在浏览器本地完成，
+          不上传服务器，并支持一键切换圆角效果。
         </p>
+        <p class="hero-cta">立即上传一张 PNG，几秒内生成可直接使用的 favicon 资源包。</p>
       </section>
 
       <section class="card">
@@ -26,8 +49,8 @@
         >
           <input id="fileInput" class="sr-only" type="file" accept="image/png" />
           <div class="dropzone-content">
-            <p class="dropzone-title">拖拽 PNG 到这里，或点击选择文件</p>
-            <p class="dropzone-hint">仅支持宽高都大于 256 像素的 PNG 图片</p>
+            <p class="dropzone-title">拖拽 PNG 到这里，或点击选择图片</p>
+            <p class="dropzone-hint">建议使用透明背景 PNG，且宽高都大于 256 像素</p>
           </div>
         </div>
 
@@ -78,6 +101,33 @@
             </dl>
           </div>
         </div>
+      </section>
+
+      <section class="footnote-card" aria-label="使用说明">
+        <h2>使用说明</h2>
+        <ol class="footnote-list">
+          <li>上传一张宽高都大于 256 像素的 PNG 图片，建议使用透明背景。</li>
+          <li>按需开启圆角预设，预览区域会立即显示最终导出效果。</li>
+          <li>点击下载后，将获得包含多尺寸 favicon PNG 文件的 ZIP 压缩包。</li>
+        </ol>
+      </section>
+
+      <section class="share-card" aria-label="分享工具">
+        <div class="share-header">
+          <h2>分享这个工具</h2>
+          <p>如果这个 favicon 工具对你有帮助，可以一键分享到常用社交平台。</p>
+        </div>
+        <div class="share-grid">
+          <button class="share-button" type="button" data-share-platform="native">系统分享</button>
+          <button class="share-button" type="button" data-share-platform="copy">复制链接</button>
+          <button class="share-button" type="button" data-share-platform="x">X</button>
+          <button class="share-button" type="button" data-share-platform="facebook">Facebook</button>
+          <button class="share-button" type="button" data-share-platform="linkedin">LinkedIn</button>
+          <button class="share-button" type="button" data-share-platform="reddit">Reddit</button>
+          <button class="share-button" type="button" data-share-platform="telegram">Telegram</button>
+          <button class="share-button" type="button" data-share-platform="whatsapp">WhatsApp</button>
+        </div>
+        <p id="shareStatus" class="share-status" aria-live="polite"></p>
       </section>
     </main>
 

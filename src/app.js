@@ -5,6 +5,8 @@ const elements = {
   fileInput: document.getElementById("fileInput"),
   downloadButton: document.getElementById("downloadButton"),
   roundedToggle: document.getElementById("roundedToggle"),
+  shareButtons: document.querySelectorAll("[data-share-platform]"),
+  shareStatus: document.getElementById("shareStatus"),
   statusText: document.getElementById("statusText"),
   previewImage: document.getElementById("previewImage"),
   previewPlaceholder: document.getElementById("previewPlaceholder"),
@@ -17,6 +19,10 @@ let currentFile = null;
 let currentDownloadUrl = "";
 let currentPreviewUrl = "";
 let currentImageMeta = null;
+const shareConfig = {
+  title: "Favicon Generator | 在线 PNG 图标包生成工具",
+  text: "上传 PNG，快速生成多尺寸 favicon PNG 图标包，支持圆角开关，纯浏览器本地处理。"
+};
 
 elements.dropzone.addEventListener("click", () => elements.fileInput.click());
 elements.dropzone.addEventListener("keydown", (event) => {
@@ -39,6 +45,13 @@ elements.roundedToggle.addEventListener("change", async () => {
   if (currentFile) {
     await updatePreview(currentFile);
   }
+});
+
+elements.shareButtons.forEach((button) => {
+  button.addEventListener("click", async () => {
+    const platform = button.dataset.sharePlatform;
+    await handleShare(platform);
+  });
 });
 
 ["dragenter", "dragover"].forEach((eventName) => {
@@ -370,4 +383,101 @@ function releasePreviewUrl() {
     URL.revokeObjectURL(currentPreviewUrl);
     currentPreviewUrl = "";
   }
+}
+
+async function handleShare(platform) {
+  if (platform === "copy") {
+    await copyCurrentLink();
+    return;
+  }
+
+  if (platform === "native") {
+    await shareWithNativeDialog();
+    return;
+  }
+
+  const shareUrl = buildShareUrl(platform);
+  if (!shareUrl) {
+    setShareStatus("当前分享平台暂不支持。");
+    return;
+  }
+
+  window.open(shareUrl, "_blank", "noopener,noreferrer");
+  setShareStatus(`已打开 ${getPlatformLabel(platform)} 分享窗口`);
+}
+
+function buildShareUrl(platform) {
+  const pageUrl = encodeURIComponent(window.location.href);
+  const title = encodeURIComponent(shareConfig.title);
+  const text = encodeURIComponent(shareConfig.text);
+
+  const urls = {
+    x: `https://twitter.com/intent/tweet?text=${title}&url=${pageUrl}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${pageUrl}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${pageUrl}`,
+    reddit: `https://www.reddit.com/submit?url=${pageUrl}&title=${title}`,
+    telegram: `https://t.me/share/url?url=${pageUrl}&text=${title}`,
+    whatsapp: `https://api.whatsapp.com/send?text=${text}%20${pageUrl}`
+  };
+
+  return urls[platform] || "";
+}
+
+async function copyCurrentLink() {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(window.location.href);
+      setShareStatus("链接已复制");
+      return;
+    }
+
+    const input = document.createElement("input");
+    input.value = window.location.href;
+    document.body.append(input);
+    input.select();
+    document.execCommand("copy");
+    input.remove();
+    setShareStatus("链接已复制");
+  } catch (error) {
+    console.error(error);
+    setShareStatus("复制失败，请手动复制当前链接");
+  }
+}
+
+async function shareWithNativeDialog() {
+  if (!navigator.share) {
+    setShareStatus("当前浏览器不支持系统分享，请使用下方社交平台按钮");
+    return;
+  }
+
+  try {
+    await navigator.share({
+      title: shareConfig.title,
+      text: shareConfig.text,
+      url: window.location.href
+    });
+    setShareStatus("分享面板已打开");
+  } catch (error) {
+    if (error?.name !== "AbortError") {
+      console.error(error);
+      setShareStatus("系统分享失败，请尝试其他分享方式");
+    }
+  }
+}
+
+function setShareStatus(message) {
+  elements.shareStatus.textContent = message;
+}
+
+function getPlatformLabel(platform) {
+  const labels = {
+    x: "X",
+    facebook: "Facebook",
+    linkedin: "LinkedIn",
+    reddit: "Reddit",
+    telegram: "Telegram",
+    whatsapp: "WhatsApp"
+  };
+
+  return labels[platform] || "社交平台";
 }
