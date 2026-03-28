@@ -1,3 +1,5 @@
+import QRCode from "qrcode";
+
 const OUTPUT_SIZES = [16, 32, 48, 64, 128];
 
 const elements = {
@@ -7,6 +9,11 @@ const elements = {
   roundedToggle: document.getElementById("roundedToggle"),
   shareButtons: document.querySelectorAll("[data-share-platform]"),
   shareStatus: document.getElementById("shareStatus"),
+  qrModal: document.getElementById("qrModal"),
+  qrBackdrop: document.getElementById("qrBackdrop"),
+  qrCloseButton: document.getElementById("qrCloseButton"),
+  qrImage: document.getElementById("qrImage"),
+  qrLinkText: document.getElementById("qrLinkText"),
   statusText: document.getElementById("statusText"),
   previewImage: document.getElementById("previewImage"),
   previewPlaceholder: document.getElementById("previewPlaceholder"),
@@ -52,6 +59,14 @@ elements.shareButtons.forEach((button) => {
     const platform = button.dataset.sharePlatform;
     await handleShare(platform);
   });
+});
+
+elements.qrCloseButton.addEventListener("click", closeQrModal);
+elements.qrBackdrop.addEventListener("click", closeQrModal);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !elements.qrModal.hidden) {
+    closeQrModal();
+  }
 });
 
 ["dragenter", "dragover"].forEach((eventName) => {
@@ -391,6 +406,11 @@ async function handleShare(platform) {
     return;
   }
 
+  if (platform === "qr") {
+    await openQrModal();
+    return;
+  }
+
   if (platform === "native") {
     await shareWithNativeDialog();
     return;
@@ -480,4 +500,29 @@ function getPlatformLabel(platform) {
   };
 
   return labels[platform] || "社交平台";
+}
+
+async function openQrModal() {
+  try {
+    const qrDataUrl = await QRCode.toDataURL(window.location.href, {
+      width: 280,
+      margin: 1,
+      color: {
+        dark: "#172033",
+        light: "#FFFFFF"
+      }
+    });
+
+    elements.qrImage.src = qrDataUrl;
+    elements.qrLinkText.textContent = window.location.href;
+    elements.qrModal.hidden = false;
+    setShareStatus("二维码已生成");
+  } catch (error) {
+    console.error(error);
+    setShareStatus("二维码生成失败，请稍后重试");
+  }
+}
+
+function closeQrModal() {
+  elements.qrModal.hidden = true;
 }
