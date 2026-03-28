@@ -7,6 +7,7 @@ const elements = {
   fileInput: document.getElementById("fileInput"),
   downloadButton: document.getElementById("downloadButton"),
   roundedToggle: document.getElementById("roundedToggle"),
+  themeButtons: document.querySelectorAll("[data-theme-preference]"),
   shareButtons: document.querySelectorAll("[data-share-platform]"),
   shareStatus: document.getElementById("shareStatus"),
   qrModal: document.getElementById("qrModal"),
@@ -26,10 +27,15 @@ let currentFile = null;
 let currentDownloadUrl = "";
 let currentPreviewUrl = "";
 let currentImageMeta = null;
+const THEME_STORAGE_KEY = "theme-preference";
+const THEME_COLOR_META = document.querySelector('meta[name="theme-color"]');
+const systemThemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
 const shareConfig = {
   title: "Favicon Generator | 在线 PNG 图标包生成工具",
   text: "上传 PNG，快速生成多尺寸 favicon PNG 图标包，支持圆角开关，纯浏览器本地处理。"
 };
+
+initializeTheme();
 
 elements.dropzone.addEventListener("click", () => elements.fileInput.click());
 elements.dropzone.addEventListener("keydown", (event) => {
@@ -54,6 +60,14 @@ elements.roundedToggle.addEventListener("change", async () => {
   }
 });
 
+elements.themeButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const preference = button.dataset.themePreference;
+    persistThemePreference(preference);
+    applyTheme(preference);
+  });
+});
+
 elements.shareButtons.forEach((button) => {
   button.addEventListener("click", async () => {
     const platform = button.dataset.sharePlatform;
@@ -68,6 +82,12 @@ document.addEventListener("keydown", (event) => {
     closeQrModal();
   }
 });
+
+if (typeof systemThemeMedia.addEventListener === "function") {
+  systemThemeMedia.addEventListener("change", handleSystemThemeChange);
+} else if (typeof systemThemeMedia.addListener === "function") {
+  systemThemeMedia.addListener(handleSystemThemeChange);
+}
 
 ["dragenter", "dragover"].forEach((eventName) => {
   elements.dropzone.addEventListener(eventName, (event) => {
@@ -525,4 +545,64 @@ async function openQrModal() {
 
 function closeQrModal() {
   elements.qrModal.hidden = true;
+}
+
+function initializeTheme() {
+  const preference = getStoredThemePreference();
+  applyTheme(preference);
+}
+
+function getStoredThemePreference() {
+  try {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === "light" || stored === "dark" || stored === "auto") {
+      return stored;
+    }
+  } catch (error) {
+    console.error(error);
+  }
+
+  return "auto";
+}
+
+function persistThemePreference(preference) {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, preference);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function applyTheme(preference) {
+  const resolvedTheme = resolveTheme(preference);
+
+  document.documentElement.dataset.themePreference = preference;
+  document.documentElement.dataset.theme = resolvedTheme;
+  updateThemeButtons(preference);
+
+  if (THEME_COLOR_META) {
+    THEME_COLOR_META.setAttribute("content", resolvedTheme === "dark" ? "#07111f" : "#3977ff");
+  }
+}
+
+function resolveTheme(preference) {
+  if (preference === "light" || preference === "dark") {
+    return preference;
+  }
+
+  return systemThemeMedia.matches ? "dark" : "light";
+}
+
+function handleSystemThemeChange() {
+  if (getStoredThemePreference() === "auto") {
+    applyTheme("auto");
+  }
+}
+
+function updateThemeButtons(preference) {
+  elements.themeButtons.forEach((button) => {
+    const isActive = button.dataset.themePreference === preference;
+    button.setAttribute("aria-pressed", String(isActive));
+    button.dataset.active = isActive ? "true" : "false";
+  });
 }

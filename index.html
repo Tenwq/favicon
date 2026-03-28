@@ -23,36 +23,99 @@
       name="twitter:description"
       content="上传 PNG，快速导出多尺寸 favicon PNG 图标包，支持圆角开关，无需上传服务器。"
     />
+    <script>
+      (() => {
+        const storageKey = "theme-preference";
+        let preference = "auto";
+
+        try {
+          preference = localStorage.getItem(storageKey) || "auto";
+        } catch {
+          preference = "auto";
+        }
+
+        const prefersDark =
+          window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const resolvedTheme = preference === "auto" ? (prefersDark ? "dark" : "light") : preference;
+
+        document.documentElement.dataset.theme = resolvedTheme;
+        document.documentElement.dataset.themePreference = preference;
+      })();
+    </script>
     <title>Favicon Generator | 在线 PNG 图标包生成工具</title>
   </head>
   <body>
-    <main class="mx-auto w-full max-w-[960px] px-4 py-14 sm:px-5 sm:pt-7 md:py-14">
+    <div
+      aria-hidden="true"
+      class="pointer-events-none fixed inset-0 overflow-hidden"
+    >
+      <div class="theme-orb-a absolute top-[-120px] left-[-80px] h-[320px] w-[320px] rounded-full blur-3xl"></div>
+      <div class="theme-orb-b absolute top-[18%] right-[-80px] h-[360px] w-[360px] rounded-full blur-3xl"></div>
+      <div class="theme-orb-c absolute bottom-[-120px] left-[18%] h-[300px] w-[300px] rounded-full blur-3xl"></div>
+    </div>
+    <main class="relative z-10 mx-auto w-full max-w-[960px] px-4 py-14 sm:px-5 sm:pt-7 md:py-14">
       <section class="mb-7">
-        <p class="mb-2.5 text-xs font-bold tracking-[0.12em] text-[#3977ff]">
-          FAVICON GENERATOR
-        </p>
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <p class="theme-kicker mb-0 text-xs font-bold tracking-[0.12em]">FAVICON GENERATOR</p>
+          <div
+            class="theme-segment-shell inline-flex items-center gap-2 rounded-full border px-2 py-2 text-sm font-medium"
+            role="group"
+            aria-label="切换主题"
+          >
+            <span class="theme-select-label px-1 text-xs font-semibold tracking-[0.08em]">主题</span>
+            <div class="theme-segment-group relative grid grid-cols-3 gap-1 rounded-full p-1">
+              <button
+                id="themeSelectAuto"
+                class="theme-segment-button relative z-[1] rounded-full px-3 py-2 text-sm font-semibold"
+                type="button"
+                data-theme-preference="auto"
+                aria-pressed="false"
+              >
+                跟随系统
+              </button>
+              <button
+                id="themeSelectLight"
+                class="theme-segment-button relative z-[1] rounded-full px-3 py-2 text-sm font-semibold"
+                type="button"
+                data-theme-preference="light"
+                aria-pressed="false"
+              >
+                浅色
+              </button>
+              <button
+                id="themeSelectDark"
+                class="theme-segment-button relative z-[1] rounded-full px-3 py-2 text-sm font-semibold"
+                type="button"
+                data-theme-preference="dark"
+                aria-pressed="false"
+              >
+                深色
+              </button>
+            </div>
+          </div>
+        </div>
         <h1 class="text-[clamp(2rem,4vw,3rem)] leading-[1.1] font-bold">
           在线生成多尺寸 favicon PNG 图标包
         </h1>
-        <p class="mt-3.5 text-[1.05rem] font-bold text-[#2f4265]">
+        <p class="theme-hero-lead mt-3.5 text-[1.05rem] font-bold">
           适合站点 favicon、浏览器标签图标和常用 Web 图标资源导出。
         </p>
-        <p class="mt-3.5 max-w-[680px] text-base text-[#53617a]">
+        <p class="theme-muted mt-3.5 max-w-[680px] text-base">
           上传一张大于 256x256 的 PNG 图片，即可快速导出适用于网站图标的
           16、32、48、64、128 多尺寸 PNG 压缩包。所有处理都在浏览器本地完成，
           不上传服务器，并支持一键切换圆角效果。
         </p>
-        <p class="mt-3.5 font-bold text-[#3977ff]">
+        <p class="theme-kicker mt-3.5 font-bold">
           立即上传一张 PNG，几秒内生成可直接使用的 favicon 资源包。
         </p>
       </section>
 
       <section
-        class="rounded-3xl border border-[rgba(116,137,173,0.18)] bg-[rgba(255,255,255,0.9)] p-6 shadow-[0_18px_50px_rgba(40,57,87,0.08)] backdrop-blur-[10px] md:p-6"
+        class="glass-panel rounded-[28px] border p-6 ring-1 backdrop-blur-2xl md:p-6"
       >
         <div
           id="dropzone"
-          class="dropzone grid min-h-[240px] cursor-pointer place-items-center rounded-[20px] border-2 border-dashed border-[#bdd0fb] bg-[#f9fbff] p-7 text-center transition duration-200 ease-out hover:-translate-y-px hover:border-[#3977ff] hover:bg-[#f0f5ff] focus-visible:-translate-y-px focus-visible:border-[#3977ff] focus-visible:bg-[#f0f5ff] focus-visible:outline-none max-md:min-h-[200px]"
+          class="dropzone glass-surface grid min-h-[240px] cursor-pointer place-items-center rounded-[24px] border-2 border-dashed p-7 text-center transition duration-200 ease-out focus-visible:-translate-y-px focus-visible:outline-none max-md:min-h-[200px]"
           role="button"
           tabindex="0"
           aria-label="上传 PNG 图片"
@@ -60,7 +123,7 @@
           <input id="fileInput" class="sr-only" type="file" accept="image/png" />
           <div>
             <p class="m-0 text-[1.1rem] font-bold">拖拽 PNG 到这里，或点击选择图片</p>
-            <p class="mt-2 text-[#61708b]">
+            <p class="theme-muted-soft mt-2">
               建议使用透明背景 PNG，且宽高都大于 256 像素
             </p>
           </div>
@@ -69,55 +132,55 @@
         <div class="mt-5 flex flex-wrap items-center gap-4">
           <button
             id="downloadButton"
-            class="cursor-pointer rounded-full border-none bg-linear-to-br from-[#3977ff] to-[#62a2ff] px-5 py-3 text-[0.95rem] font-bold text-white shadow-[0_10px_24px_rgba(57,119,255,0.25)] transition duration-200 ease-out hover:-translate-y-px hover:shadow-[0_14px_30px_rgba(57,119,255,0.3)] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
+            class="theme-primary-button cursor-pointer rounded-full border px-5 py-3 text-[0.95rem] font-bold text-white transition duration-200 ease-out hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
             type="button"
             disabled
           >
             下载 ZIP
           </button>
-          <label class="inline-flex cursor-pointer items-center gap-2.5 font-semibold text-[#344154]">
+          <label class="theme-strong inline-flex cursor-pointer items-center gap-2.5 font-semibold">
             <input id="roundedToggle" class="peer sr-only" type="checkbox" />
             <span
               aria-hidden="true"
-              class="relative h-7 w-12 rounded-full bg-[#d4deef] transition-colors duration-200 before:absolute before:top-[3px] before:left-[3px] before:h-[22px] before:w-[22px] before:rounded-full before:bg-white before:shadow-[0_2px_6px_rgba(23,32,51,0.18)] before:transition-transform before:duration-200 peer-checked:bg-[#3977ff] peer-checked:before:translate-x-5 peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[rgba(57,119,255,0.25)]"
+              class="theme-toggle-track relative h-7 w-12 rounded-full border transition-colors duration-200 before:absolute before:top-[3px] before:left-[3px] before:h-[22px] before:w-[22px] before:rounded-full before:bg-white before:transition-transform before:duration-200 peer-checked:before:translate-x-5 peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2"
             ></span>
             <span class="text-[0.95rem]">启用圆角</span>
           </label>
-          <span id="statusText" class="text-[#61708b]">请选择一个 PNG 文件</span>
+          <span id="statusText" class="theme-status">请选择一个 PNG 文件</span>
         </div>
 
         <div class="mt-6 grid gap-5 md:grid-cols-[1.2fr_0.8fr]">
-          <div class="rounded-[20px] border border-[#e5ecf8] bg-white p-5">
+          <div class="glass-subpanel rounded-[24px] border p-5 backdrop-blur-xl">
             <h2 class="mb-3.5 text-base font-semibold">预览</h2>
             <div
-              class="preview-grid-bg grid min-h-[260px] place-items-center overflow-hidden rounded-2xl"
+              class="preview-grid-bg glass-surface grid min-h-[260px] place-items-center overflow-hidden rounded-[20px] border"
             >
               <img id="previewImage" alt="PNG 预览" hidden />
-              <p id="previewPlaceholder" class="m-0 text-[#7a869d]">上传后将在这里显示预览</p>
+              <p id="previewPlaceholder" class="theme-placeholder m-0">上传后将在这里显示预览</p>
             </div>
           </div>
 
-          <div class="rounded-[20px] border border-[#e5ecf8] bg-white p-5">
+          <div class="glass-subpanel rounded-[24px] border p-5 backdrop-blur-xl">
             <h2 class="mb-3.5 text-base font-semibold">输出信息</h2>
             <dl class="grid gap-3.5">
-              <div class="border-b border-[#eef3fb] pb-3.5">
-                <dt class="text-[0.86rem] text-[#6d7a90]">文件名</dt>
+              <div class="theme-divider border-b pb-3.5">
+                <dt class="theme-meta text-[0.86rem]">文件名</dt>
                 <dd id="fileName" class="mt-1 font-bold">-</dd>
               </div>
-              <div class="border-b border-[#eef3fb] pb-3.5">
-                <dt class="text-[0.86rem] text-[#6d7a90]">原始尺寸</dt>
+              <div class="theme-divider border-b pb-3.5">
+                <dt class="theme-meta text-[0.86rem]">原始尺寸</dt>
                 <dd id="fileSize" class="mt-1 font-bold">-</dd>
               </div>
-              <div class="border-b border-[#eef3fb] pb-3.5">
-                <dt class="text-[0.86rem] text-[#6d7a90]">输出尺寸</dt>
+              <div class="theme-divider border-b pb-3.5">
+                <dt class="theme-meta text-[0.86rem]">输出尺寸</dt>
                 <dd class="mt-1 font-bold">16 / 32 / 48 / 64 / 128</dd>
               </div>
-              <div class="border-b border-[#eef3fb] pb-3.5">
-                <dt class="text-[0.86rem] text-[#6d7a90]">圆角</dt>
+              <div class="theme-divider border-b pb-3.5">
+                <dt class="theme-meta text-[0.86rem]">圆角</dt>
                 <dd id="cornerMode" class="mt-1 font-bold">关闭</dd>
               </div>
               <div>
-                <dt class="text-[0.86rem] text-[#6d7a90]">输出格式</dt>
+                <dt class="theme-meta text-[0.86rem]">输出格式</dt>
                 <dd class="mt-1 font-bold">ZIP 压缩包（内含 PNG）</dd>
               </div>
             </dl>
@@ -126,11 +189,11 @@
       </section>
 
       <section
-        class="mt-[22px] rounded-[20px] border border-[rgba(116,137,173,0.18)] bg-[rgba(255,255,255,0.82)] px-6 py-[22px] shadow-[0_12px_32px_rgba(40,57,87,0.06)]"
+        class="glass-subpanel mt-[22px] rounded-[24px] border px-6 py-[22px] backdrop-blur-xl"
         aria-label="使用说明"
       >
         <h2 class="mb-3 text-base font-semibold">使用说明</h2>
-        <ol class="pl-5 text-[#53617a]">
+        <ol class="theme-muted pl-5">
           <li>上传一张宽高都大于 256 像素的 PNG 图片，建议使用透明背景。</li>
           <li class="mt-2">按需开启圆角预设，预览区域会立即显示最终导出效果。</li>
           <li class="mt-2">点击下载后，将获得包含多尺寸 favicon PNG 文件的 ZIP 压缩包。</li>
@@ -138,18 +201,18 @@
       </section>
 
       <section
-        class="mt-[22px] rounded-[20px] border border-[rgba(116,137,173,0.18)] bg-[rgba(255,255,255,0.9)] px-6 py-[22px] shadow-[0_12px_32px_rgba(40,57,87,0.06)]"
+        class="glass-subpanel mt-[22px] rounded-[24px] border px-6 py-[22px] backdrop-blur-xl"
         aria-label="分享工具"
       >
         <div>
           <h2 class="text-base font-semibold">分享这个工具</h2>
-          <p class="mt-2 text-[#53617a]">
+          <p class="theme-muted mt-2">
             如果这个 favicon 工具对你有帮助，可以一键分享到常用社交平台。
           </p>
         </div>
         <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(140px,1fr))]">
           <button
-            class="inline-flex cursor-pointer items-center gap-2.5 rounded-[14px] border border-[#dbe6fa] bg-[#f8fbff] px-3.5 py-3 text-left text-[0.95rem] font-bold text-[#24324b] transition duration-200 ease-out hover:-translate-y-px hover:border-[#3977ff] hover:bg-[#f1f6ff] hover:shadow-[0_10px_22px_rgba(57,119,255,0.12)]"
+            class="glass-chip theme-share-button inline-flex cursor-pointer items-center gap-2.5 rounded-[16px] border px-3.5 py-3 text-left text-[0.95rem] font-bold transition duration-200 ease-out hover:-translate-y-px"
             type="button"
             data-share-platform="native"
           >
@@ -166,7 +229,7 @@
             <span>系统分享</span>
           </button>
           <button
-            class="inline-flex cursor-pointer items-center gap-2.5 rounded-[14px] border border-[#dbe6fa] bg-[#f8fbff] px-3.5 py-3 text-left text-[0.95rem] font-bold text-[#24324b] transition duration-200 ease-out hover:-translate-y-px hover:border-[#3977ff] hover:bg-[#f1f6ff] hover:shadow-[0_10px_22px_rgba(57,119,255,0.12)]"
+            class="glass-chip theme-share-button inline-flex cursor-pointer items-center gap-2.5 rounded-[16px] border px-3.5 py-3 text-left text-[0.95rem] font-bold transition duration-200 ease-out hover:-translate-y-px"
             type="button"
             data-share-platform="copy"
           >
@@ -183,7 +246,7 @@
             <span>复制链接</span>
           </button>
           <button
-            class="inline-flex cursor-pointer items-center gap-2.5 rounded-[14px] border border-[#dbe6fa] bg-[#f8fbff] px-3.5 py-3 text-left text-[0.95rem] font-bold text-[#24324b] transition duration-200 ease-out hover:-translate-y-px hover:border-[#3977ff] hover:bg-[#f1f6ff] hover:shadow-[0_10px_22px_rgba(57,119,255,0.12)]"
+            class="glass-chip theme-share-button inline-flex cursor-pointer items-center gap-2.5 rounded-[16px] border px-3.5 py-3 text-left text-[0.95rem] font-bold transition duration-200 ease-out hover:-translate-y-px"
             type="button"
             data-share-platform="qr"
           >
@@ -200,7 +263,7 @@
             <span>二维码</span>
           </button>
           <button
-            class="inline-flex cursor-pointer items-center gap-2.5 rounded-[14px] border border-[#dbe6fa] bg-[#f8fbff] px-3.5 py-3 text-left text-[0.95rem] font-bold text-[#24324b] transition duration-200 ease-out hover:-translate-y-px hover:border-[#3977ff] hover:bg-[#f1f6ff] hover:shadow-[0_10px_22px_rgba(57,119,255,0.12)]"
+            class="glass-chip theme-share-button inline-flex cursor-pointer items-center gap-2.5 rounded-[16px] border px-3.5 py-3 text-left text-[0.95rem] font-bold transition duration-200 ease-out hover:-translate-y-px"
             type="button"
             data-share-platform="x"
           >
@@ -217,7 +280,7 @@
             <span>X</span>
           </button>
           <button
-            class="inline-flex cursor-pointer items-center gap-2.5 rounded-[14px] border border-[#dbe6fa] bg-[#f8fbff] px-3.5 py-3 text-left text-[0.95rem] font-bold text-[#24324b] transition duration-200 ease-out hover:-translate-y-px hover:border-[#3977ff] hover:bg-[#f1f6ff] hover:shadow-[0_10px_22px_rgba(57,119,255,0.12)]"
+            class="glass-chip theme-share-button inline-flex cursor-pointer items-center gap-2.5 rounded-[16px] border px-3.5 py-3 text-left text-[0.95rem] font-bold transition duration-200 ease-out hover:-translate-y-px"
             type="button"
             data-share-platform="facebook"
           >
@@ -234,7 +297,7 @@
             <span>Facebook</span>
           </button>
           <button
-            class="inline-flex cursor-pointer items-center gap-2.5 rounded-[14px] border border-[#dbe6fa] bg-[#f8fbff] px-3.5 py-3 text-left text-[0.95rem] font-bold text-[#24324b] transition duration-200 ease-out hover:-translate-y-px hover:border-[#3977ff] hover:bg-[#f1f6ff] hover:shadow-[0_10px_22px_rgba(57,119,255,0.12)]"
+            class="glass-chip theme-share-button inline-flex cursor-pointer items-center gap-2.5 rounded-[16px] border px-3.5 py-3 text-left text-[0.95rem] font-bold transition duration-200 ease-out hover:-translate-y-px"
             type="button"
             data-share-platform="linkedin"
           >
@@ -251,7 +314,7 @@
             <span>LinkedIn</span>
           </button>
           <button
-            class="inline-flex cursor-pointer items-center gap-2.5 rounded-[14px] border border-[#dbe6fa] bg-[#f8fbff] px-3.5 py-3 text-left text-[0.95rem] font-bold text-[#24324b] transition duration-200 ease-out hover:-translate-y-px hover:border-[#3977ff] hover:bg-[#f1f6ff] hover:shadow-[0_10px_22px_rgba(57,119,255,0.12)]"
+            class="glass-chip theme-share-button inline-flex cursor-pointer items-center gap-2.5 rounded-[16px] border px-3.5 py-3 text-left text-[0.95rem] font-bold transition duration-200 ease-out hover:-translate-y-px"
             type="button"
             data-share-platform="reddit"
           >
@@ -268,7 +331,7 @@
             <span>Reddit</span>
           </button>
           <button
-            class="inline-flex cursor-pointer items-center gap-2.5 rounded-[14px] border border-[#dbe6fa] bg-[#f8fbff] px-3.5 py-3 text-left text-[0.95rem] font-bold text-[#24324b] transition duration-200 ease-out hover:-translate-y-px hover:border-[#3977ff] hover:bg-[#f1f6ff] hover:shadow-[0_10px_22px_rgba(57,119,255,0.12)]"
+            class="glass-chip theme-share-button inline-flex cursor-pointer items-center gap-2.5 rounded-[16px] border px-3.5 py-3 text-left text-[0.95rem] font-bold transition duration-200 ease-out hover:-translate-y-px"
             type="button"
             data-share-platform="telegram"
           >
@@ -285,7 +348,7 @@
             <span>Telegram</span>
           </button>
           <button
-            class="inline-flex cursor-pointer items-center gap-2.5 rounded-[14px] border border-[#dbe6fa] bg-[#f8fbff] px-3.5 py-3 text-left text-[0.95rem] font-bold text-[#24324b] transition duration-200 ease-out hover:-translate-y-px hover:border-[#3977ff] hover:bg-[#f1f6ff] hover:shadow-[0_10px_22px_rgba(57,119,255,0.12)]"
+            class="glass-chip theme-share-button inline-flex cursor-pointer items-center gap-2.5 rounded-[16px] border px-3.5 py-3 text-left text-[0.95rem] font-bold transition duration-200 ease-out hover:-translate-y-px"
             type="button"
             data-share-platform="whatsapp"
           >
@@ -302,35 +365,35 @@
             <span>WhatsApp</span>
           </button>
         </div>
-        <p id="shareStatus" class="mt-3.5 min-h-6 text-[#61708b]" aria-live="polite"></p>
+        <p id="shareStatus" class="theme-status mt-3.5 min-h-6" aria-live="polite"></p>
       </section>
 
       <div id="qrModal" class="qr-modal" hidden>
-        <div id="qrBackdrop" class="absolute inset-0 bg-[rgba(17,24,39,0.5)] backdrop-blur-[4px]"></div>
+        <div id="qrBackdrop" class="theme-modal-backdrop absolute inset-0 backdrop-blur-[4px]"></div>
         <div
-          class="relative z-[1] w-full max-w-[420px] rounded-3xl bg-white p-6 shadow-[0_24px_70px_rgba(17,24,39,0.24)]"
+          class="theme-modal glass-panel relative z-[1] w-full max-w-[420px] rounded-[28px] border p-6 ring-1 backdrop-blur-2xl"
           role="dialog"
           aria-modal="true"
           aria-labelledby="qrTitle"
         >
           <button
             id="qrCloseButton"
-            class="absolute top-3.5 right-3.5 h-9 w-9 cursor-pointer rounded-full border-none bg-[#edf3ff] text-[1.4rem] leading-none text-[#24324b]"
+            class="theme-close-button absolute top-3.5 right-3.5 h-9 w-9 cursor-pointer rounded-full border text-[1.4rem] leading-none"
             type="button"
             aria-label="关闭二维码弹层"
           >
             ×
           </button>
           <h2 id="qrTitle" class="text-[1.1rem] font-semibold">扫码打开当前页面</h2>
-          <p class="mt-2.5 text-[#53617a]">
+          <p class="theme-muted mt-2.5">
             使用手机扫描二维码，即可在移动设备上继续访问这个工具。
           </p>
           <div
-            class="mt-[18px] grid place-items-center rounded-[18px] border border-[#e5ecf8] bg-[#f8fbff] p-4"
+            class="glass-surface mt-[18px] grid place-items-center rounded-[20px] border p-4"
           >
             <img id="qrImage" class="block h-auto w-full max-w-[240px]" alt="当前页面二维码" />
           </div>
-          <p id="qrLinkText" class="mt-3.5 break-all text-[0.92rem] text-[#61708b]"></p>
+          <p id="qrLinkText" class="theme-status mt-3.5 break-all text-[0.92rem]"></p>
         </div>
       </div>
     </main>
