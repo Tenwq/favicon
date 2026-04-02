@@ -151,12 +151,6 @@ async function handleFile(file) {
       height: image.naturalHeight
     };
 
-    if (!isLargeEnough(meta)) {
-      resetState();
-      setStatus("图片宽高必须都大于 256 像素");
-      return;
-    }
-
     currentFile = file;
     currentImageMeta = meta;
     releaseDownloadUrl();
@@ -447,10 +441,6 @@ function setStatus(message) {
 
 function isPngFile(file) {
   return file.type === "image/png" || /\.png$/i.test(file.name);
-}
-
-function isLargeEnough(meta) {
-  return meta.width > 256 && meta.height > 256;
 }
 
 function isRoundedEnabled() {
