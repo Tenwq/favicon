@@ -1,6 +1,6 @@
 import QRCode from "qrcode";
 
-const OUTPUT_SIZES = [16, 32, 48, 64, 128];
+const OUTPUT_SIZES = [16, 32, 48, 64, 72, 128, 144, 192, 256, 512];
 
 const elements = {
   dropzone: document.getElementById("dropzone"),
